@@ -55,7 +55,7 @@ class InvoicePrintService
             ]
         ];
 
-        return Pdf::loadView('pdf.kisantra-invoice', $data)
+        return Pdf::loadView('pdf.agsa-invoice', $data)
             ->setPaper('A4', 'portrait')
             ->setOptions([
                 'dpi' => 150,
