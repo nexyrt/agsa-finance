@@ -136,8 +136,7 @@
                 {{-- Issue Date (3 cols) --}}
                 <div class="md:col-span-3">
                     <label class="block text-sm font-medium text-dark-900 dark:text-dark-50 mb-1">Issue Date *</label>
-                    <input type="date" x-model="invoice.issue_date"
-                        class="w-full px-3 py-2 text-sm border border-dark-200 dark:border-dark-600 rounded-lg bg-white dark:bg-dark-800 text-dark-900 dark:text-dark-50 focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                    <input type="date" x-model="invoice.issue_date" @change="updateDueDate()" class="w-full px-3 py-2 text-sm border border-dark-200 dark:border-dark-600 rounded-lg bg-white dark:bg-dark-800 text-dark-900 dark:text-dark-50 focus:ring-2 focus:ring-primary-500 focus:border-transparent" />
                 </div>
 
                 {{-- Due Date (3 cols) --}}
@@ -180,7 +179,7 @@
                 <div class="col-span-3 text-xs font-semibold text-dark-700 dark:text-dark-300 uppercase">Amount</div>
                 <div class="col-span-3 text-xs font-semibold text-dark-700 dark:text-dark-300 uppercase">COGS</div>
                 <div class="col-span-2 text-xs font-semibold text-dark-700 dark:text-dark-300 uppercase text-center">
-                    Tax</div>
+                    Non-Profit</div>
                 <div class="col-span-1 text-xs font-semibold text-dark-700 dark:text-dark-300 uppercase text-center">
                 </div>
             </div>
@@ -334,7 +333,6 @@
                                 <label class="flex items-center gap-1.5 cursor-pointer">
                                     <input type="checkbox" x-model="item.is_tax_deposit"
                                         class="rounded border-dark-300 dark:border-dark-600 text-primary-600 focus:ring-2 focus:ring-primary-500">
-                                    <span class="text-xs text-dark-600 dark:text-dark-400">Tax</span>
                                 </label>
                             </div>
 
@@ -360,7 +358,7 @@
                                     <label class="flex items-center gap-1.5 cursor-pointer">
                                         <input type="checkbox" x-model="item.is_tax_deposit"
                                             class="rounded border-dark-300 dark:border-dark-600 text-primary-600 focus:ring-2 focus:ring-primary-500">
-                                        <span class="text-xs text-dark-600 dark:text-dark-400">Tax Deposit</span>
+                                        <span class="text-xs text-dark-600 dark:text-dark-400">Non-Profit</span>
                                     </label>
                                 </div>
                                 <button @click="removeItem(index)" type="button"
@@ -602,7 +600,7 @@
                                 x-text="formatCurrency(netProfit)"></span>
                         </div>
                         <div class="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                            <span class="text-xs text-blue-700 dark:text-blue-400 block mb-1">Tax Deposits</span>
+                            <span class="text-xs text-blue-700 dark:text-blue-400 block mb-1">Non-Profit</span>
                             <span class="text-base font-semibold text-blue-600 dark:text-blue-400"
                                 x-text="formatCurrency(taxDeposits)"></span>
                         </div>
@@ -659,15 +657,59 @@
 
             init() {
                 const t = new Date();
-                const y = t.getFullYear().toString().slice(-2);
-                const m = String(t.getMonth() + 1).padStart(2, '0');
+                const year = t.getFullYear();
+                const monthIndex = t.getMonth();
 
-                // Generate invoice number dari max sequence
                 const nextSequence = this.maxInvoiceSequence + 1;
-                this.invoice.invoice_number = `INV/${String(nextSequence).padStart(2, '0')}/KSN/${m}.${y}`;
+                const companyAbbr = 'AGSA';
+                const months = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
+                const monthRoman = months[monthIndex];
 
+                this.invoice.invoice_number =
+                    `${String(nextSequence).padStart(3, '0')}/${companyAbbr}-XXX/INVOICE/${monthRoman}/${year}`;
+
+                // Auto fill issue date dengan hari ini
                 this.invoice.issue_date = t.toISOString().split('T')[0];
-                this.invoice.due_date = new Date(t.getTime() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+                // Auto fill due date 5 hari setelah issue date
+                this.updateDueDate();
+            },
+
+            updateDueDate() {
+                if (this.invoice.issue_date) {
+                    const issueDate = new Date(this.invoice.issue_date);
+                    const dueDate = new Date(issueDate.getTime() + 5 * 24 * 60 * 60 * 1000);
+                    this.invoice.due_date = dueDate.toISOString().split('T')[0];
+                }
+            },
+
+            getClientAbbreviation(clientName) {
+                if (!clientName) return 'XXX';
+
+                // Ambil huruf kapital
+                const matches = clientName.match(/\b[A-Z]/g);
+                let abbr = matches ? matches.join('') : '';
+
+                // Jika kurang dari 3, ambil 3 huruf pertama
+                if (abbr.length < 3) {
+                    abbr = clientName.replace(/[^A-Za-z]/g, '').substring(0, 3).toUpperCase();
+                }
+
+                return abbr;
+            },
+
+            updateInvoiceNumber() {
+                const t = new Date();
+                const year = t.getFullYear();
+                const monthIndex = t.getMonth();
+                const nextSequence = this.maxInvoiceSequence + 1;
+                const companyAbbr = 'AGSA';
+                const clientAbbr = this.getClientAbbreviation(this.invoice.client_name);
+                const months = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
+                const monthRoman = months[monthIndex];
+
+                this.invoice.invoice_number =
+                    `${String(nextSequence).padStart(3, '0')}/${companyAbbr}-${clientAbbr}/INVOICE/${monthRoman}/${year}`;
             },
 
             get filteredClients() {
@@ -708,6 +750,7 @@
             selectClient(c) {
                 this.invoice.client_id = c.id;
                 this.invoice.client_name = c.name;
+                this.updateInvoiceNumber(); // ← Tambah ini
                 this.selectOpen = false;
                 this.selectSearch = '';
                 this.items.forEach(i => {

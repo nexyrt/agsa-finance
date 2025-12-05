@@ -162,7 +162,7 @@
                 <div class="col-span-3 text-xs font-semibold text-dark-700 dark:text-dark-300 uppercase">Amount</div>
                 <div class="col-span-3 text-xs font-semibold text-dark-700 dark:text-dark-300 uppercase">COGS</div>
                 <div class="col-span-2 text-xs font-semibold text-dark-700 dark:text-dark-300 uppercase text-center">
-                    Tax</div>
+                    Non-Profit</div>
                 <div class="col-span-1 text-xs font-semibold text-dark-700 dark:text-dark-300 uppercase text-center">
                 </div>
             </div>
@@ -316,7 +316,7 @@
                                 <label class="flex items-center gap-1.5 cursor-pointer">
                                     <input type="checkbox" x-model="item.is_tax_deposit"
                                         class="rounded border-dark-300 dark:border-dark-600 text-primary-600 focus:ring-2 focus:ring-primary-500">
-                                    <span class="text-xs text-dark-600 dark:text-dark-400">Tax</span>
+                                    <span class="text-xs text-dark-600 dark:text-dark-400">Non-Profit</span>
                                 </label>
                             </div>
 
@@ -342,7 +342,7 @@
                                     <label class="flex items-center gap-1.5 cursor-pointer">
                                         <input type="checkbox" x-model="item.is_tax_deposit"
                                             class="rounded border-dark-300 dark:border-dark-600 text-primary-600 focus:ring-2 focus:ring-primary-500">
-                                        <span class="text-xs text-dark-600 dark:text-dark-400">Tax Deposit</span>
+                                        <span class="text-xs text-dark-600 dark:text-dark-400">Non-Profit</span>
                                     </label>
                                 </div>
                                 <button @click="removeItem(index)" type="button"
@@ -583,7 +583,7 @@
                                 x-text="formatCurrency(netProfit)"></span>
                         </div>
                         <div class="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                            <span class="text-xs text-blue-700 dark:text-blue-400 block mb-1">Tax Deposits</span>
+                            <span class="text-xs text-blue-700 dark:text-blue-400 block mb-1">Non-Profit</span>
                             <span class="text-base font-semibold text-blue-600 dark:text-blue-400"
                                 x-text="formatCurrency(taxDeposits)"></span>
                         </div>

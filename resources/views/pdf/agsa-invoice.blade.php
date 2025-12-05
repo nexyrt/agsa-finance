@@ -271,7 +271,6 @@
                     @if (!empty($company['logo_base64']))
                         <img src="{{ $company['logo_base64'] }}" class="logo" alt="Logo">
                     @else
-                        {{-- Placeholder for design review --}}
                         <div
                             style="width: 350px; height: 80px; background: #e5e7eb; display: flex; align-items: center; justify-content: center; border: 1px solid #ccc;">
                             <span style="color: #666; font-size: 18pt; font-weight: bold;">AGSA LOGO</span>
@@ -287,31 +286,36 @@
                                 style="display: table-cell; width: 30px; vertical-align: top; padding-right: 5px; font-size: 8pt;">
                                 To:</div>
                             <div style="display: table-cell; vertical-align: top;">
-                                <div class="client-name">PT. GANDA ALAM MAKMUR</div>
+                                <div class="client-name">{{ $client->name ?? 'N/A' }}</div>
                             </div>
                         </div>
                         <div style="display: table-row;">
                             <div style="display: table-cell;"></div>
                             <div style="display: table-cell; vertical-align: top;">
-                                <div style="font-size: 8pt;">DI SEMPAYAU</div>
+                                <div style="font-size: 8pt;">DI {{ strtoupper($client->address ?? 'SEMPAYAU') }}</div>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Periode -->
-                <div class="periode">Periode 21 SEPTEMBER 2025 - 20 OKTOBER 2025</div>
+                @php
+                    $issueDate = $invoice->issue_date ?? now();
+                    $periodeStart = $issueDate->copy()->subMonth()->day(21);
+                    $periodeEnd = $issueDate->copy()->day(20);
+                @endphp
+                <div class="periode">
+                    Periode {{ $periodeStart->format('d F Y') }} - {{ $periodeEnd->format('d F Y') }}
+                </div>
             </div>
 
             <!-- Right Column: Company Info + Invoice Meta -->
             <div class="header-grid-right">
                 <!-- Company Info -->
                 <div class="company-info" style="margin-bottom: 30px; margin-top: 30px;">
-                    Jalan AW Syahranie Perum Villa Tamara Blok L No. 9<br>
-                    Samarinda, Kalimantan Timur - Indonesia<br>
-                    0813 1177 1117<br>
-                    <a href="/cdn-cgi/l/email-protection" class="__cf_email__"
-                        data-cfemail="5d3c3a2f3c2d3c333c2e3c29243c3c3f3c3934732d291d3a303c3431733e3230">[email&#160;protected]</a>
+                    {{ $company['address'] ?? 'Alamat tidak tersedia' }}<br>
+                    {{ $company['phone'] ?? '-' }}<br>
+                    {{ $company['email'] ?? '-' }}
                 </div>
 
                 <!-- Invoice Meta -->
@@ -320,12 +324,14 @@
                         <tr>
                             <td style="padding: 2px 5px 2px 0; font-size: 8pt; white-space: nowrap;">INVOICE NO.</td>
                             <td style="padding: 2px 5px; font-size: 8pt;">:</td>
-                            <td style="padding: 2px 0 2px 5px; font-size: 8pt;">075/AGSA-GAM/INVOICE/X/2025</td>
+                            <td style="padding: 2px 0 2px 5px; font-size: 8pt;">{{ $invoice->invoice_number ?? '-' }}
+                            </td>
                         </tr>
                         <tr>
                             <td style="padding: 2px 5px 2px 0; font-size: 8pt; white-space: nowrap;">DATE</td>
                             <td style="padding: 2px 5px; font-size: 8pt;">:</td>
-                            <td style="padding: 2px 0 2px 5px; font-size: 8pt;">21 Oktober 2025</td>
+                            <td style="padding: 2px 0 2px 5px; font-size: 8pt;">
+                                {{ $invoice->issue_date?->format('d F Y') ?? '-' }}</td>
                         </tr>
                     </table>
                 </div>
@@ -365,62 +371,6 @@
         </table>
 
         <!-- Summary Box -->
-        @php
-            $subtotalI = $invoice->subtotal;
-            $dpp = $subtotalI * 0.029;
-            $ppn = $dpp * 0.12;
-            $subtotalII = $subtotalI + $dpp + $ppn;
-            $pph23 = $subtotalI * 0.02;
-            $grandTotal = $subtotalII - $pph23;
-
-            // Fungsi Terbilang untuk konversi angka ke kata
-            function terbilang($angka)
-            {
-                $angka = abs($angka);
-                $huruf = [
-                    '',
-                    'Satu',
-                    'Dua',
-                    'Tiga',
-                    'Empat',
-                    'Lima',
-                    'Enam',
-                    'Tujuh',
-                    'Delapan',
-                    'Sembilan',
-                    'Sepuluh',
-                    'Sebelas',
-                ];
-                $hasil = '';
-
-                if ($angka < 12) {
-                    $hasil = ' ' . $huruf[$angka];
-                } elseif ($angka < 20) {
-                    $hasil = terbilang($angka - 10) . ' Belas';
-                } elseif ($angka < 100) {
-                    $hasil = terbilang($angka / 10) . ' Puluh' . terbilang($angka % 10);
-                } elseif ($angka < 200) {
-                    $hasil = ' Seratus' . terbilang($angka - 100);
-                } elseif ($angka < 1000) {
-                    $hasil = terbilang($angka / 100) . ' Ratus' . terbilang($angka % 100);
-                } elseif ($angka < 2000) {
-                    $hasil = ' Seribu' . terbilang($angka - 1000);
-                } elseif ($angka < 1000000) {
-                    $hasil = terbilang($angka / 1000) . ' Ribu' . terbilang($angka % 1000);
-                } elseif ($angka < 1000000000) {
-                    $hasil = terbilang($angka / 1000000) . ' Juta' . terbilang($angka % 1000000);
-                } elseif ($angka < 1000000000000) {
-                    $hasil = terbilang($angka / 1000000000) . ' Milyar' . terbilang($angka % 1000000000);
-                } elseif ($angka < 1000000000000000) {
-                    $hasil = terbilang($angka / 1000000000000) . ' Triliun' . terbilang($angka % 1000000000000);
-                }
-
-                return trim($hasil);
-            }
-
-            $terbilang = terbilang($grandTotal) . ' Rupiah';
-        @endphp
-
         <table
             style="width: 100%; border-left: 2px solid #000; border-right: 2px solid #000; border-bottom: 2px solid #000; border-top: none; border-collapse: collapse; margin-top: 0;">
             <tbody>

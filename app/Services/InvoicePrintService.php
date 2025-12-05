@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\CompanyProfile;
 use App\Models\Invoice;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Ngekoding\Terbilang\Terbilang;
 
 class InvoicePrintService
 {
@@ -20,13 +21,13 @@ class InvoicePrintService
         $regularItems = $invoice->items->where('is_tax_deposit', false);
         $taxDepositItems = $invoice->items->where('is_tax_deposit', true);
 
-        $netRevenue = $regularItems->sum('amount');
-        $totalCogs = $regularItems->sum('cogs_amount');
-        $grossProfit = $netRevenue - $totalCogs - ($invoice->discount_amount ?? 0);
-
-        // PPN Calculation
-        $ppnAmount = $company?->is_pkp ? ($displayAmount * $company->ppn_rate / 100) : 0;
-        $grandTotal = $displayAmount + $ppnAmount;
+        // Perhitungan AGSA Invoice
+        $subtotalI = $invoice->subtotal;
+        $dpp = $regularItems->sum('amount'); // Total non-tax deposit items
+        $ppn = $dpp * 0.11; // 11% dari DPP
+        $subtotalII = $subtotalI + $ppn;
+        $pph23 = $dpp * 0.02; // 2% dari DPP
+        $grandTotal = $subtotalII - $pph23;
 
         $data = [
             'invoice' => $invoice,
@@ -36,23 +37,21 @@ class InvoicePrintService
             'tax_deposit_items' => $taxDepositItems,
             'payments' => $invoice->payments,
             'company' => $this->getCompanyInfo($company),
-            'terbilang' => $this->numberToWords($grandTotal),
+
+            // AGSA Calculations
+            'subtotalI' => $subtotalI,
+            'dpp' => $dpp,
+            'ppn' => $ppn,
+            'subtotalII' => $subtotalII,
+            'pph23' => $pph23,
+            'grandTotal' => $grandTotal,
+            'terbilang' => ucfirst(Terbilang::convert($grandTotal, true)),
+
             'is_down_payment' => $isDownPayment,
             'is_pelunasan' => $isPelunasan,
             'dp_amount' => $dpAmount,
             'pelunasan_amount' => $pelunasanAmount,
-            'display_amount' => $displayAmount,
-            'ppn_amount' => $ppnAmount,
-            'grand_total' => $grandTotal,
             'total_paid' => $invoice->payments->sum('amount'),
-            'financial_summary' => [
-                'net_revenue' => $netRevenue,
-                'total_cogs' => $totalCogs,
-                'gross_profit' => $grossProfit,
-                'tax_deposits_total' => $taxDepositItems->sum('amount'),
-                'has_tax_deposits' => $taxDepositItems->isNotEmpty(),
-                'profit_margin' => $netRevenue > 0 ? ($grossProfit / $netRevenue) * 100 : 0
-            ]
         ];
 
         return Pdf::loadView('pdf.agsa-invoice', $data)
@@ -122,63 +121,5 @@ class InvoicePrintService
         return file_exists($fullPath) ? 'data:image/png;base64,' . base64_encode(file_get_contents($fullPath)) : '';
     }
 
-    private function numberToWords($number): string
-    {
-        if ($number == 0)
-            return 'Nol';
-
-        $words = ['', 'Satu', 'Dua', 'Tiga', 'Empat', 'Lima', 'Enam', 'Tujuh', 'Delapan', 'Sembilan'];
-
-        // Milyar
-        if ($number >= 1000000000) {
-            $milyar = intval($number / 1000000000);
-            $sisa = $number % 1000000000;
-            $result = ($milyar == 1 ? 'Satu' : $this->numberToWords($milyar)) . ' Milyar';
-            return $sisa > 0 ? $result . ' ' . $this->numberToWords($sisa) : $result;
-        }
-
-        // Juta
-        if ($number >= 1000000) {
-            $juta = intval($number / 1000000);
-            $sisa = $number % 1000000;
-            $result = ($juta == 1 ? 'Satu' : $this->numberToWords($juta)) . ' Juta';
-            return $sisa > 0 ? $result . ' ' . $this->numberToWords($sisa) : $result;
-        }
-
-        // Ribu
-        if ($number >= 1000) {
-            $ribu = intval($number / 1000);
-            $sisa = $number % 1000;
-            $result = ($ribu == 1 ? 'Seribu' : $this->numberToWords($ribu) . ' Ribu');
-            return $sisa > 0 ? $result . ' ' . $this->numberToWords($sisa) : $result;
-        }
-
-        // Ratus
-        if ($number >= 100) {
-            $ratus = intval($number / 100);
-            $sisa = $number % 100;
-            $result = ($ratus == 1 ? 'Seratus' : $words[$ratus] . ' Ratus');
-            return $sisa > 0 ? $result . ' ' . $this->numberToWords($sisa) : $result;
-        }
-
-        // Puluh
-        if ($number >= 20) {
-            $puluh = intval($number / 10);
-            $sisa = $number % 10;
-            $result = $words[$puluh] . ' Puluh';
-            return $sisa > 0 ? $result . ' ' . $words[$sisa] : $result;
-        }
-
-        // 11-19
-        if ($number >= 11) {
-            return $words[$number - 10] . ' Belas';
-        }
-
-        // 10
-        if ($number == 10)
-            return 'Sepuluh';
-
-        // 1-9
-        return $words[$number];
-    }
+    // ← Hapus method numberToWords() yang lama
 }

@@ -131,20 +131,29 @@ class Create extends Component
     public function maxInvoiceSequence()
     {
         $date = now();
+        $currentYear = $date->year;
 
-        $invoices = Invoice::whereYear('issue_date', $date->year)
-            ->whereMonth('issue_date', $date->month)
+        $invoices = Invoice::whereYear('issue_date', $currentYear)
             ->pluck('invoice_number');
 
         $maxSequence = 0;
         foreach ($invoices as $invoiceNumber) {
-            if (preg_match('/INV\/(\d+)\/KSN\/\d{2}\.\d{2}/', $invoiceNumber, $matches)) {
+            if (preg_match('/^(\d+)\//', $invoiceNumber, $matches)) {
                 $sequence = (int) $matches[1];
                 $maxSequence = max($maxSequence, $sequence);
             }
         }
 
         return $maxSequence;
+    }
+
+    #[Computed]
+    public function invoiceNumberFormat()
+    {
+        return [
+            'company_abbr' => 'AGSA', // atau dari config
+            'month_romans' => ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII']
+        ];
     }
 
     private function parseAmount($value): int
