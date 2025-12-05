@@ -136,7 +136,8 @@
                 {{-- Issue Date (3 cols) --}}
                 <div class="md:col-span-3">
                     <label class="block text-sm font-medium text-dark-900 dark:text-dark-50 mb-1">Issue Date *</label>
-                    <input type="date" x-model="invoice.issue_date" @change="updateDueDate()" class="w-full px-3 py-2 text-sm border border-dark-200 dark:border-dark-600 rounded-lg bg-white dark:bg-dark-800 text-dark-900 dark:text-dark-50 focus:ring-2 focus:ring-primary-500 focus:border-transparent" />
+                    <input type="date" x-model="invoice.issue_date" @change="updateDueDate()"
+                        class="w-full px-3 py-2 text-sm border border-dark-200 dark:border-dark-600 rounded-lg bg-white dark:bg-dark-800 text-dark-900 dark:text-dark-50 focus:ring-2 focus:ring-primary-500 focus:border-transparent" />
                 </div>
 
                 {{-- Due Date (3 cols) --}}
@@ -668,11 +669,67 @@
                 this.invoice.invoice_number =
                     `${String(nextSequence).padStart(3, '0')}/${companyAbbr}-XXX/INVOICE/${monthRoman}/${year}`;
 
-                // Auto fill issue date dengan hari ini
                 this.invoice.issue_date = t.toISOString().split('T')[0];
-
-                // Auto fill due date 5 hari setelah issue date
                 this.updateDueDate();
+
+                // Add 5 default items
+                const periodeStart = new Date(t.getFullYear(), t.getMonth() - 1, 21);
+                const periodeEnd = new Date(t.getFullYear(), t.getMonth(), 20);
+                const periodeText =
+                    `Periode ${periodeStart.toLocaleDateString('id-ID', {day: 'numeric', month: 'long', year: 'numeric'})} - ${periodeEnd.toLocaleDateString('id-ID', {day: 'numeric', month: 'long', year: 'numeric'})}`;
+
+                const defaultItems = [{
+                        service_name: `Biaya tenaga kerja ${periodeText}`,
+                        quantity: 1,
+                        unit_price: '3.728.133.628',
+                        cogs_amount: '0'
+                    },
+                    {
+                        service_name: 'Kesejahteraan (JHT, JKK, JKM & JP) & BPJS KESEHATAN',
+                        quantity: 1,
+                        unit_price: '330.596.177',
+                        cogs_amount: '0'
+                    },
+                    {
+                        service_name: 'Management fee (8%)',
+                        quantity: 1,
+                        unit_price: '155.103.214',
+                        cogs_amount: '0'
+                    },
+                    {
+                        service_name: 'PPH 21',
+                        quantity: 1,
+                        unit_price: '127.301.614',
+                        cogs_amount: '0'
+                    },
+                    {
+                        service_name: `Uang Makan ${periodeText}`,
+                        quantity: 1,
+                        unit_price: '552.195.000',
+                        cogs_amount: '0'
+                    }
+                ];
+
+                defaultItems.forEach(item => {
+                    const newItem = {
+                        id: this.nextId++,
+                        client_id: this.invoice.client_id || null,
+                        client_name: this.invoice.client_name || '',
+                        service_name: item.service_name,
+                        quantity: item.quantity,
+                        unit_price: item.unit_price,
+                        amount: this.parse(item.unit_price),
+                        cogs_amount: item.cogs_amount,
+                        profit: 0,
+                        is_tax_deposit: false
+                    };
+                    this.items.push(newItem);
+                    this.itemSelectOpen[newItem.id] = false;
+                    this.itemSelectSearch[newItem.id] = '';
+                    this.serviceSelectOpen[newItem.id] = false;
+                    this.serviceSelectSearch[newItem.id] = '';
+                    this.calculateItem(newItem);
+                });
             },
 
             updateDueDate() {
